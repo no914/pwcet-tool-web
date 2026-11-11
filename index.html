@@ -310,9 +310,8 @@ async function refreshRunCatalog(){
 function timelineTotal(){return Math.max(0.001,Number(realTrace?.duration_ms)||10)}
 function timelineReset(){timelineView.start=0;timelineView.span=timelineTotal();state.event=0;render()}
 function timelineZoom(factor){
-  if(!realTrace?.available)return;
   const total=timelineTotal(),old=timelineView.span;
-  const span=Math.max(Math.min(total,0.01),Math.min(total,old*factor));
+  const span=Math.max(Math.min(total,realTrace?.available?0.01:0.1),Math.min(total,old*factor));
   const middle=timelineView.start+old/2;
   timelineView.span=span;
   timelineView.start=Math.max(0,Math.min(total-span,middle-span/2));render();
@@ -325,11 +324,10 @@ function timelinePan(direction){
 const timelinePointer={active:false,moved:false,lastX:0,width:1,accumulated:0,lastDragEnd:-Infinity};
 function timelineClamp(start,span){
   const total=timelineTotal();
-  const nextSpan=Math.max(Math.min(total,0.01),Math.min(total,span));
+  const nextSpan=Math.max(Math.min(total,realTrace?.available?0.01:0.1),Math.min(total,span));
   return {start:Math.max(0,Math.min(total-nextSpan,start)),span:nextSpan};
 }
 function timelineZoomAt(factor,fraction){
-  if(!realTrace?.available)return;
   const before=timelineView.span;
   const anchor=Math.max(0,Math.min(1,fraction));
   const anchorTime=timelineView.start+anchor*before;
@@ -346,7 +344,6 @@ function timelineAreaFraction(clientX){
   return Math.max(0,Math.min(1,(clientX-r.left)/r.width));
 }
 function timelineWheel(event){
-  if(!realTrace?.available)return;
   if(!event.target.closest('.tl-track, .tl-ruler'))return;
   event.preventDefault();
   if(event.shiftKey){
@@ -359,7 +356,7 @@ function timelineWheel(event){
   timelineZoomAt(factor,timelineAreaFraction(event.clientX));
 }
 function timelinePointerDown(event){
-  if(!realTrace?.available||event.button!==0)return;
+  if(event.button!==0)return;
   if(!event.target.closest('.tl-track, .tl-ruler'))return;
   timelinePointer.active=true;
   timelinePointer.moved=false;
@@ -387,7 +384,7 @@ function timelinePointerUp(){
 }
 function installTimelineMouseHandlers(){
   const board=document.querySelector('.tl-board');
-  if(!board||!realTrace?.available)return;
+  if(!board)return;
   board.addEventListener('wheel',timelineWheel,{passive:false});
   board.addEventListener('pointerdown',timelinePointerDown);
   if(!window.__pwcetTimelineMouseInstalled){
@@ -409,11 +406,11 @@ function selectedEvents(i){
 function timeline(){
   const f=currentFunc(),groups=["Precise Functions","Offline Helpers","Other Campaign"];
   const real=Boolean(realTrace?.available),total=timelineTotal();
-  if(real && timelineView.span>total){timelineView.span=total;timelineView.start=0}
+  if(timelineView.span>total){timelineView.span=total;timelineView.start=0}
   const viewStart=timelineView.start,span=timelineView.span,viewEnd=viewStart+span;
   const intervals=real?selectedEvents(state.index):[];
   const chosen=real?intervals[state.event]:mockEvents(state.index)[state.event]||mockEvents(state.index)[0];
-  const ruler=Array.from({length:6},(_,i)=>`<span>${(viewStart+span*i/5).toFixed(span<1?3:2)} ms</span>`).join("");
+  const ruler=Array.from({length:6},(_,i)=>`<span>${(viewStart+span*i/5).toFixed(span<1?3:2)} ${real?"ms":"s"}</span>`).join("");
   const rows=groups.map(group=>{
     const entries=funcs.map((item,index)=>({item,index})).filter(e=>groupName(e.item)===group);
     if(!entries.length)return"";
@@ -423,8 +420,8 @@ function timeline(){
     return header+entries.map(({item,index})=>{
       const raw=real?selectedEvents(index):mockEvents(index);
       const blocks=raw.map((ev,j)=>{
-        const a=real?ev.start_ms:ev.start/100*10000;
-        const b=real?ev.end_ms:(ev.start+ev.width)/100*10000;
+        const a=real?ev.start_ms:ev.start/100*10;
+        const b=real?ev.end_ms:(ev.start+ev.width)/100*10;
         const lo=Math.max(a,viewStart),hi=Math.min(b,viewEnd);
         if(hi<=lo)return "";
         return `<button class="tl-event ${index===state.index&&j===state.event?"active":""}" style="left:${((lo-viewStart)/span*100).toFixed(5)}%;width:${Math.max(0.08,(hi-lo)/span*100).toFixed(5)}%" onclick="selectTimelineEvent(${index},${j})" title="${real?`Sample ${esc(ev.sample_id)} · ${esc(ev.duration_ms)} ms · PID ${esc(ev.pid)} / TID ${esc(ev.tid)}`:`Simulated event ${j+1}`}"></button>`;
@@ -432,12 +429,12 @@ function timeline(){
       return `<div class="tl-function-row"><button class="tl-function-name ${index===state.index?"active":""}" onclick="selectFunction(${index})" title="${esc(fullLabel(item))}"><span class="tl-name-primary">${esc(displayName(item))}</span><span class="tl-name-secondary">${esc(functionLocation(item))}</span></button><div class="tl-track ${index===state.index?"selected":""}">${blocks}</div></div>`;
     }).join("");
   }).join("");
-  const controls=real?`<div class="tl-tools"><button class="btn secondary" onclick="timelinePan(-1)" title="Pan left">←</button><button class="btn secondary" onclick="timelineZoom(.5)" title="Zoom in">＋</button><button class="btn secondary" onclick="timelineZoom(2)" title="Zoom out">−</button><button class="btn secondary" onclick="timelinePan(1)" title="Pan right">→</button><button class="btn secondary" onclick="timelineReset()">Reset to Fit</button><span class="hint">${viewStart.toFixed(3)}–${viewEnd.toFixed(3)} ms</span></div>`:"";
+  const controls=`<div class="tl-tools"><button class="btn secondary" onclick="timelinePan(-1)" title="Pan left">←</button><button class="btn secondary" onclick="timelineZoom(.5)" title="Zoom in">＋</button><button class="btn secondary" onclick="timelineZoom(2)" title="Zoom out">−</button><button class="btn secondary" onclick="timelinePan(1)" title="Pan right">→</button><button class="btn secondary" onclick="timelineReset()">Reset to Fit</button><span class="hint">${viewStart.toFixed(real?3:2)}–${viewEnd.toFixed(real?3:2)} ${real?"ms":"s"}</span></div>`;
   const eventDetails=real?chosen?`${kv("Sample ID",esc(chosen.sample_id))}${kv("Start",num(chosen.start_ms)+" ms")}${kv("Duration",num(chosen.duration_ms)+" ms")}${kv("Thread CPU",ms(chosen.thread_cpu_ms))}${kv("PID / TID",esc(chosen.pid)+" / "+esc(chosen.tid))}${kv("Clock","Relative monotonic")}`:'<p class="hint">No event selected for this function.</p>':`<span class="tag">SIMULATED DATA</span>${kv("Event","#"+(state.event+1))}${kv("Start",(chosen.start*100).toFixed(0)+" ms")}${kv("Duration",(chosen.width*100).toFixed(0)+" ms")}`;
   return `${pageHeader("Timeline / Function View",real?"Recorded function intervals from the selected Python profiling run.":"Function summaries with an illustrative timeline (not recorded timestamps).")}${capturePanel()}
   ${controls}
-  ${real?'<p class="tl-gesture-tip">Mouse: scroll over the timeline to zoom at the cursor · drag left/right to pan · Shift + scroll to pan · Reset to Fit restores the full run.</p>':''}
-  <div class="tl-board"><div class="tl-scroll"><div class="tl-inner"><div class="tl-board-header"><div class="tl-tree-heading">FUNCTION TREE</div><div class="tl-chart-heading"><span>EXECUTION TIMELINE</span><span class="tag">${real?"RECORDED · WALL TIME":"SIMULATED · 10s"}</span></div></div><div class="tl-ruler-row"><div class="tl-ruler-label">Grouped by available source</div><div class="tl-ruler">${real?ruler:'<span>0s</span><span>2s</span><span>4s</span><span>6s</span><span>8s</span><span>10s</span>'}</div></div>${rows}<div class="tl-resource-title">RESOURCE MONITORING</div>${["CPU","GPU","Memory"].map(r=>`<div class="tl-resource-row"><div class="tl-resource-label"><span class="tl-resource-indicator"></span>${r}</div><div class="tl-no-data">No telemetry data available</div></div>`).join("")}</div></div></div>
+  <p class="tl-gesture-tip">Mouse: scroll over timeline to zoom at cursor · drag horizontally to pan · Shift + scroll to pan · Reset to Fit restores the full view. ${real?"Recorded timestamps":"Demo-only simulated intervals"}.</p>
+  <div class="tl-board"><div class="tl-scroll"><div class="tl-inner"><div class="tl-board-header"><div class="tl-tree-heading">FUNCTION TREE</div><div class="tl-chart-heading"><span>EXECUTION TIMELINE</span><span class="tag">${real?"RECORDED · WALL TIME":"SIMULATED · 10s"}</span></div></div><div class="tl-ruler-row"><div class="tl-ruler-label">Grouped by available source</div><div class="tl-ruler">${ruler}</div></div>${rows}<div class="tl-resource-title">RESOURCE MONITORING</div>${["CPU","GPU","Memory"].map(r=>`<div class="tl-resource-row"><div class="tl-resource-label"><span class="tl-resource-indicator"></span>${r}</div><div class="tl-no-data">No telemetry data available</div></div>`).join("")}</div></div></div>
   <div class="tl-details">${panel("SELECTED FUNCTION",`<div class="panel-body"><div style="font-weight:750;color:var(--blue);margin-bottom:8px">${esc(displayName(f))}</div><p class="hint">${esc(functionLocation(f))}</p>${kv("Samples",Number(f.samples||0).toLocaleString())}${kv("Mean",ms(f.mean_ms))}${kv("Observed Max",ms(f.max_ms))}${kv("Raw PPF 99.6%",ms(f.raw_ppf_99_6_ms))}${kv("IESTA PPF 99.6%",ms(f.iesta_ppf_99_6_ms))}<button class="btn" style="margin-top:16px" onclick="openAnalysis(${state.index})">Open pWCET Analysis →</button></div>`)}${panel(real?"SELECTED RECORDED EVENT":"SELECTED SIMULATED EVENT",`<div class="panel-body">${eventDetails}</div>`)}</div>
   <div class="warning"><strong>Data scope:</strong> ${real?"Events are actual completed Python function intervals from this run. Times are relative to the earliest recorded start; they are not synchronized with external devices. CPU/GPU/memory utilization traces have not been imported.":"Legacy LAPA summaries do not include synchronized event timestamps. Event positions here are simulated."}</div>`;
 }
