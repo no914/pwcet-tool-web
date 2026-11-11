@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>pWCET Tool — Timing Analysis</title>
+<style>
+:root{--bg:#f5f7fb;--surface:#fff;--border:#dce5ef;--text:#192941;--muted:#70829a;--blue:#2563eb;--teal:#1199a7;--green:#15966e;--yellow:#e4a33d;--red:#dc5261;--navy:#243b52;--navy2:#3d5b77;--nav-light:#7894b0}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}a{color:inherit}
+/* PWCET TOOL HOME — independent visual identity; layout inspired by research-tool clarity */
+.home{min-height:100vh;background:#f7f9fc;color:#172840}
+.home-header{height:78px;max-width:1360px;margin:auto;padding:0 34px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.home-mark{display:flex;align-items:center;gap:12px;font-size:23px;font-weight:800;letter-spacing:-.9px;color:#152944}
+.home-mark-symbol{width:39px;height:39px;border-radius:12px;display:grid;place-items:center;background:#2167e8;color:white;font-size:23px}
+.home-menu{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.home-menu button{border:0;background:transparent;color:#52657f;border-radius:8px;padding:10px 13px;font-size:13px;font-weight:650}
+.home-menu button:hover{background:#e9f1ff;color:#1d58bf}
+.home-menu .home-menu-primary{background:#2563eb;color:#fff;padding:11px 17px}
+.home-menu .home-menu-primary:hover{background:#194fc6;color:#fff}
+.home-main{max-width:1360px;margin:0 auto;padding:0 34px 48px}
+.home-hero{position:relative;isolation:isolate;overflow:hidden;border-radius:22px;background:linear-gradient(117deg,#edf5ff 0%,#f7fbff 52%,#e9f8f7 100%);border:1px solid #deebf7;display:grid;grid-template-columns:1fr .93fr;gap:28px;align-items:center;padding:70px 62px 67px}
+.home-hero:before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(38,99,235,.038) 1px,transparent 1px),linear-gradient(90deg,rgba(38,99,235,.038) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(90deg,transparent 5%,black 85%);z-index:-1}
+.home-overline{font-size:11px;font-weight:800;letter-spacing:2.7px;color:#118f9c;text-transform:uppercase;margin-bottom:16px}
+.home-hero h1{font-size:clamp(39px,4.4vw,65px);line-height:1.1;letter-spacing:-2.4px;margin:0 0 22px;max-width:610px;color:#132947}
+.home-hero h1 em{font-style:normal;color:#2563eb}
+.home-hero-copy{font-size:16px;line-height:1.8;color:#576b84;max-width:550px;margin:0 0 27px}
+.home-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.home-primary{border:1px solid #2563eb;border-radius:9px;background:#2563eb;color:white;font-size:13px;font-weight:750;padding:13px 20px;box-shadow:0 6px 16px rgba(37,99,235,.15)}
+.home-primary:hover{background:#1b54cf}
+.home-secondary{border:1px solid #c7d7e9;border-radius:9px;background:white;color:#26486b;font-size:13px;font-weight:750;padding:13px 19px}
+.home-secondary:hover{background:#f5faff}
+.home-demo-caption{display:flex;align-items:center;gap:8px;margin-top:18px;color:#768ba1;font-size:11px}
+.home-demo-dot{width:7px;height:7px;border-radius:50%;background:#16a38d}
+.home-preview{border:1px solid #cfdceb;background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 24px 55px rgba(27,57,99,.13);transform:rotate(-1deg)}
+.home-preview-head{height:37px;background:#f5f8fd;border-bottom:1px solid #e5ecf4;display:flex;align-items:center;gap:6px;padding:0 13px;font-size:10px;color:#617a99}
+.home-preview-head i{width:7px;height:7px;background:#c5d3e4;border-radius:50%;display:block}
+.home-preview-head span{margin-left:auto;font-weight:700;color:#2665bf}
+.home-preview-body{display:grid;grid-template-columns:31% 1fr;min-height:246px}
+.home-preview-tree{border-right:1px solid #e7edf5;padding:15px 10px;font-size:10px;color:#68809c}
+.home-preview-tree b{display:block;font-size:10px;color:#2b4362;margin-bottom:11px}
+.home-preview-tree div{padding:7px 4px;border-radius:4px}
+.home-preview-tree .chosen{background:#eaf2ff;color:#195bca;font-weight:750}
+.home-preview-timeline{padding:18px 14px 12px}
+.home-preview-axis{display:flex;justify-content:space-between;font:9px ui-monospace,monospace;color:#97a8bc;margin-bottom:14px}
+.home-preview-lane{height:32px;border-bottom:1px solid #edf2f6;position:relative;background-image:linear-gradient(90deg,transparent 24.7%,#edf2f6 25%,transparent 25.3%,transparent 49.7%,#edf2f6 50%,transparent 50.3%,transparent 74.7%,#edf2f6 75%,transparent 75.3%)}
+.home-preview-bar{position:absolute;top:10px;height:11px;border-radius:3px;background:#39a9b6}
+.home-preview-bar.blue{background:#4e82db}.home-preview-bar.gold{background:#e9b462}
+.home-preview-foot{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #e7edf5;background:#fcfdff;color:#7790a6;font-size:9px;flex-wrap:wrap}
+.home-overview{display:grid;grid-template-columns:1.55fr 1fr;gap:20px;margin-top:24px}
+.home-about,.home-status{background:#fff;border:1px solid var(--border);border-radius:15px;padding:28px 30px}
+.home-section-kicker{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1199a7;font-weight:800;margin-bottom:10px}
+.home-about h2,.home-features-head h2{font-size:25px;letter-spacing:-.8px;margin:0 0 12px}
+.home-about p{font-size:14px;color:#60728a;line-height:1.8;margin:0}
+.home-status-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:11px}
+.home-status-header strong{font-size:16px}
+.home-chip{background:#e8f8f1;color:#157f60;border:1px solid #b9e7d2;border-radius:30px;padding:5px 9px;font-size:10px;font-weight:800}
+.home-status p{font-size:13px;color:#60728a;line-height:1.7;margin:0}
+.home-statline{display:flex;align-items:baseline;gap:9px;margin:13px 0 7px}
+.home-statline b{font-size:31px;letter-spacing:-1.1px;color:#174ec2}
+.home-statline span{font-size:12px;color:#6c8098}
+.home-features-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:40px 0 17px}
+.home-features-head p{margin:0;color:#71839a;font-size:13px}
+.home-features{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.home-feature{background:#fff;border:1px solid #dce5ef;border-radius:14px;padding:23px 21px 20px;display:flex;flex-direction:column;align-items:flex-start;min-height:233px}
+.home-feature-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:#eaf2ff;color:#2563eb;font-size:19px;margin-bottom:17px}
+.home-feature:nth-child(2) .home-feature-icon{background:#e9f8f7;color:#118d95}
+.home-feature:nth-child(3) .home-feature-icon{background:#f0edfc;color:#7961c8}
+.home-feature:nth-child(4) .home-feature-icon{background:#f3f6fa;color:#637a94}
+.home-feature h3{font-size:17px;letter-spacing:-.3px;margin:0 0 9px}
+.home-feature p{font-size:12px;line-height:1.7;color:#718199;margin:0 0 18px}
+.home-feature button{margin-top:auto;border:0;background:transparent;padding:0;color:#215dcd;font-weight:750;font-size:12px}
+.home-feature button:hover{text-decoration:underline}
+.home-disclaimer{margin:25px 0 0;font-size:11px;line-height:1.7;color:#8293a8}
+.home-footer{border-top:1px solid #e2e9f2;padding:18px 34px;text-align:center;font-size:11px;color:#8293a8}
+@media(max-width:1060px){.home-hero{padding:48px 35px;grid-template-columns:1fr .9fr}.home-features{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.home-header{height:auto;padding:18px 20px;align-items:flex-start;flex-direction:column}.home-menu{gap:2px}.home-menu button{padding:8px 9px}.home-main{padding:0 18px 30px}.home-hero{padding:42px 25px;grid-template-columns:1fr}.home-hero h1{font-size:42px}.home-preview{transform:none}.home-overview{grid-template-columns:1fr}.home-features-head{display:block}.home-features-head p{margin-top:6px}}
+@media(max-width:520px){.home-features{grid-template-columns:1fr}.home-hero h1{font-size:37px}.home-about,.home-status{padding:22px}.home-feature{min-height:180px}}
+/* APP SHELL */
+.shell{min-height:100vh;display:grid;grid-template-columns:235px minmax(0,1fr)}.sidebar{background:#fff;border-right:1px solid var(--border);padding:26px 15px;display:flex;flex-direction:column;gap:30px}.brand{display:flex;align-items:center;gap:12px;padding:0 8px}.brand-icon{width:38px;height:38px;border-radius:10px;background:#e9f2ff;color:var(--blue);display:grid;place-items:center;font-size:24px;font-weight:800}.brand-name{font-size:23px;font-weight:800;letter-spacing:-1px}.brand-subtitle{color:var(--muted);font-size:10px;letter-spacing:1.5px}.nav-title{color:#8393a8;font-size:10px;font-weight:800;letter-spacing:2px;padding:0 12px 10px}.nav{display:grid;gap:5px}.nav button{border:1px solid transparent;background:transparent;border-radius:8px;width:100%;text-align:left;padding:12px;color:#50647e}.nav button:hover{background:#f1f5fa}.nav button.active{background:#eaf2ff;color:#1859c7;border-color:#bad4fb;font-weight:700}.nav-symbol{display:inline-block;width:28px}.sidebar-status{margin-top:auto;border:1px solid var(--border);background:#f8fafc;border-radius:9px;padding:13px;font-size:11px;color:var(--muted)}.sidebar-status strong{color:#50647e}.main{min-width:0}.topbar{background:white;height:74px;border-bottom:1px solid var(--border);padding:0 30px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}.topbar strong{color:var(--text)}.top-badge{color:#167854;background:#e8f9f1;border:1px solid #a8ddca;padding:6px 12px;border-radius:99px;font-size:11px;font-weight:700}.content{max-width:1750px;margin:auto;padding:27px 30px}.page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}.eyebrow{color:var(--teal);font-size:11px;font-weight:800;letter-spacing:2px}.content h1{font-size:29px;margin:5px 0;letter-spacing:-.8px}.subtitle{font-size:13px;color:var(--muted);margin:4px 0}.section-title{font-size:19px;margin:28px 0 5px}
+.panel{min-width:0;background:#fff;border:1px solid var(--border);border-radius:11px;overflow:hidden}.panel-header{border-bottom:1px solid var(--border);padding:15px 18px;font-size:12px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:12px}.panel-body{padding:17px}.tag{display:inline-block;background:#f4f7fb;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 8px;font-size:10px;font-weight:600}.btn{background:var(--blue);border:1px solid var(--blue);color:white;border-radius:7px;padding:10px 14px;font-size:12px}.btn:hover{background:#1d4ed8}.btn.secondary{background:#fff;border-color:var(--border);color:#334155}.select,.search{background:#fff;border:1px solid var(--border);border-radius:7px;color:var(--text);padding:10px}.select{width:100%;min-width:300px;max-width:460px}.search{width:100%}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:18px}.metric{padding:17px}.metric-label{font-size:11px;color:var(--muted)}.metric-value{font-size:24px;font-weight:750;margin:6px 0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.metric-note{color:#8797aa;font-size:10px}.kv{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #edf1f6;padding:10px 0;font-size:12px}.kv span:first-child{color:var(--muted)}.kv span:last-child{text-align:right;font-family:ui-monospace,monospace;overflow-wrap:anywhere}.hint{color:var(--muted);font-size:11px}.warning{background:#fff9ec;border:1px solid #f4d399;color:#805a19;border-radius:8px;padding:14px;margin-top:16px;font-size:12px}.footer{padding:24px 0;color:#8999ad;font-size:11px}
+/* TIMELINE */
+.tl-board{background:white;border:1px solid var(--border);border-radius:11px;overflow:hidden}.tl-scroll{overflow-x:auto}.tl-inner{min-width:820px}.tl-board-header,.tl-ruler-row,.tl-group-row,.tl-function-row,.tl-resource-row{display:grid;grid-template-columns:270px minmax(450px,1fr)}.tl-board-header{background:#f8fafc;border-bottom:1px solid var(--border)}.tl-tree-heading,.tl-chart-heading{padding:16px 18px;font-size:12px;font-weight:800}.tl-tree-heading{border-right:1px solid var(--border)}.tl-chart-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.tl-ruler-row{border-bottom:1px solid var(--border)}.tl-ruler-label{border-right:1px solid var(--border);color:var(--muted);padding:12px 16px;font-size:11px}.tl-ruler{display:flex;justify-content:space-between;padding:12px 18px;color:#61758f;font:11px ui-monospace,monospace}.tl-group-row{background:#f5f8fc;border-bottom:1px solid var(--border)}.tl-group-button{padding:12px 16px;text-align:left;border:0;border-right:1px solid var(--border);background:transparent;color:#344765;font-size:12px;font-weight:750}.tl-group-button:hover{color:var(--blue)}.tl-group-description{padding:12px 16px;color:#8190a6;font-size:11px}.tl-function-row{min-height:47px;border-bottom:1px solid #edf1f6}.tl-function-name{min-width:0;display:flex;flex-direction:column;justify-content:center;padding:7px 12px 7px 25px;border:0;border-right:1px solid var(--border);background:transparent;text-align:left;color:#475b76}.tl-function-name:hover{background:#f2f7ff}.tl-function-name.active{background:#eaf2ff;color:#1557c7;border-left:3px solid var(--blue);padding-left:22px}.tl-name-primary{font-size:12px;font-weight:650;overflow-wrap:anywhere}.tl-name-secondary{font-size:10px;color:#8595aa;margin-top:2px;overflow-wrap:anywhere}.tl-track{position:relative;min-height:47px;background-image:linear-gradient(to right,transparent calc(100% - 1px),#e7edf4 calc(100% - 1px));background-size:20% 100%}.tl-track.selected{background-color:#f8fbff}.tl-event{position:absolute;top:15px;height:17px;min-width:3px;padding:0;border:1px solid #2696a1;border-radius:4px;background:#55b5bf}.tl-event:hover{filter:brightness(.91)}.tl-event.active{background:#efad49;border-color:#bc8227;box-shadow:0 0 0 2px #ffedcc}.tl-resource-title{background:#f8fafc;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:15px 18px;font-size:12px;font-weight:800}.tl-resource-row{min-height:74px;border-bottom:1px solid #edf1f6}.tl-resource-label{display:flex;align-items:center;gap:10px;padding:18px;border-right:1px solid var(--border);font-size:12px;font-weight:650}.tl-resource-indicator{width:10px;height:10px;border-radius:50%;background:#cbd5e1}.tl-no-data{display:flex;align-items:center;justify-content:center;color:#9aa8ba;font-size:12px;background:repeating-linear-gradient(135deg,#fff,#fff 14px,#fafbfd 14px,#fafbfd 28px)}.tl-details{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+/* REPORT */
+.report-document{background:white;border:1px solid var(--border);border-radius:10px;padding:24px 28px}.report-function-name{font-size:18px;font-weight:750;margin-bottom:20px;overflow-wrap:anywhere}.report-section-title{background:#f1f3f5;border-top:1px solid #d8dee6;border-bottom:1px solid #d8dee6;text-align:center;font-size:14px;font-weight:750;padding:11px}.report-table-scroll{overflow-x:auto}.report-table{width:100%;min-width:690px;border-collapse:collapse;table-layout:fixed}.report-table th,.report-table td{padding:13px 12px;border-bottom:1px solid #e3e8ef;text-align:left;font-size:12px}.report-table th{background:white;color:#243348;font-weight:700}.report-table td{color:#243348;font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums}.report-test{padding:17px 12px;border-bottom:1px solid #dce5ef;font-size:13px}.report-test p{color:#64748b;font-size:12px;margin-bottom:0}.figure-section{margin-top:28px}.figure-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}.figure-panel img{width:100%;height:auto;max-height:460px;object-fit:contain;display:block;margin:auto}.figure-link{display:inline-block;color:var(--blue);font-size:12px;text-decoration:none;margin-top:12px}.figure-link:hover{text-decoration:underline}.figure-empty{background:#f8fafc;border-radius:7px;color:var(--muted);text-align:center;padding:45px 10px}
+/* DIAGNOSIS / INFO */
+.table-wrap{overflow-x:auto}.data-table{width:100%;min-width:700px;border-collapse:collapse;font-size:12px}.data-table th,.data-table td{padding:13px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.data-table th{background:#f8fafc;color:var(--muted);font-size:10px;letter-spacing:1px}.status-dot{display:inline-block;width:11px;height:11px;margin-right:7px;border-radius:50%}.status-dot.yellow{background:var(--yellow)}.status-dot.gray{background:#94a3b8}.link{background:transparent;border:0;color:var(--blue);font-size:12px}.diagnosis-detail{background:#eff6ff;padding:16px;margin-top:16px;border-left:3px solid var(--blue);border-radius:6px}.diagnosis-detail h3{margin:0 0 8px}.diagnosis-detail p{color:#475569;font-size:12px}.info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.info-row{display:grid;grid-template-columns:145px minmax(0,1fr);gap:12px;padding:11px 0;border-bottom:1px solid #edf1f6;font-size:12px}.info-row span:first-child{color:var(--muted)}.info-row span:last-child{font-family:monospace;overflow-wrap:anywhere}.error{margin:30px;padding:20px;border:1px solid #f5bcbc;background:#fff5f5;color:#a33;border-radius:8px}
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{gap:12px}.nav{display:flex;flex-wrap:wrap}.sidebar-status{display:none}.content{padding:18px}.topbar{padding:0 18px}.page-header{flex-direction:column;align-items:stretch}.figure-grid,.tl-details,.info-grid{grid-template-columns:1fr}.report-document{padding:12px}}
+@media(max-width:550px){.metrics{grid-template-columns:1fr}.select{min-width:0}}
+/* v0.2 measurement control — does not claim pWCET fitting */
+.capture-panel{margin:0 0 18px;background:#fff;border:1px solid var(--border);border-radius:11px;padding:16px 19px}
+.capture-panel h2{font-size:15px;margin:0 0 7px}
+.capture-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:14px}
+.capture-controls label{font-size:11px;color:var(--muted);display:grid;gap:4px}
+.capture-controls input{width:78px;border:1px solid var(--border);border-radius:6px;padding:8px}
+.capture-message{font:12px/1.6 ui-monospace,monospace;color:#52657f;overflow-wrap:anywhere;margin:10px 0 0}
+
+/* v0.4: recorded timeline controls */
+.tl-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.tl-tools .btn{padding:7px 12px;min-width:40px}
+.tl-tools .hint{margin-left:auto;font-variant-numeric:tabular-nums}
+/* Mouse gestures: grab to pan, wheel over timeline to zoom */
+.tl-track,.tl-ruler{cursor:grab;touch-action:pan-y;user-select:none}
+.tl-track.dragging,.tl-ruler.dragging,.tl-board.mouse-panning .tl-track,.tl-board.mouse-panning .tl-ruler{cursor:grabbing}
+.tl-event{cursor:pointer}
+.tl-track{overflow:hidden}
+.tl-gesture-tip{font-size:11px;color:var(--muted);margin:0 0 10px}
+</style>
+</head>
+<body><div id="app">Loading pWCET Tool...</div>
+<script>
+// Web Agent Phase 1: token is kept only in page memory, not localStorage or URL.
+const localAgent = {base:'http://127.0.0.1:8765', token:'', connected:false, profiles:[], busy:false};
+function agentFetch(path,options={}) {
+  if(!localAgent.token) return Promise.reject(new Error('Please connect to your local agent first.'));
+  const headers = new Headers(options.headers || {});
+  headers.set('X-pWCET-Token',localAgent.token);
+  return fetch(localAgent.base+path,{...options,headers,cache:'no-store',mode:'cors'});
+}
+function connectScreen(message='') {
+  const node = document.getElementById('app');
+  node.innerHTML = `<div style="min-height:100vh;background:#f6f9fd;padding:9vh 20px;color:#20344f;font:15px/1.6 system-ui,sans-serif">
+    <div style="max-width:600px;margin:auto;background:white;border:1px solid #dce6f3;border-radius:18px;padding:32px;box-shadow:0 15px 50px #2345630b">
+      <h1 style="font-size:29px;margin:0 0 8px">pWCET Tool · Connect Local Agent</h1>
+      <p>To profile applications on <strong>this computer</strong>, first start the pWCET Tool Local Agent. This public website does not execute Python itself.</p>
+      <p style="font-size:13px;color:#60718b">Local Agent URL: <code>http://127.0.0.1:8765</code></p>
+      <label for="agentToken">Pairing token (printed in the Agent terminal)</label>
+      <input id="agentToken" type="password" autocomplete="off" placeholder="Paste your one-session token" style="display:block;width:100%;margin:7px 0 17px;padding:12px;border:1px solid #cbd8e8;border-radius:9px" />
+      <button onclick="connectLocalAgent()" style="background:#2563eb;color:white;border:0;border-radius:9px;padding:12px 20px;font-weight:700">Connect Local Agent</button>
+      <p id="connectError" style="color:#b33b48;margin-top:14px;overflow-wrap:anywhere">${escapeConnect(message)}</p>
+      <p style="color:#6b7c92;font-size:13px;margin-top:24px">In Chrome you may be asked to allow local network / loopback access for this site. Keep the Agent running while using pWCET Tool. Do not share the token.</p>
+    </div></div>`;
+}
+function escapeConnect(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function connectLocalAgent() {
+  const token=document.getElementById('agentToken')?.value?.trim();
+  const err=document.getElementById('connectError');
+  if(!token){err.textContent='Enter the pairing token.';return;}
+  localAgent.token=token;
+  try {
+    const res=await agentFetch('/agent/health');
+    if(!res.ok)throw new Error(`Agent rejected connection (HTTP ${res.status}). Check the token and allowed website origin.`);
+    const health=await res.json();
+    if(health.status!=='ok')throw new Error('Unexpected response from local agent.');
+    localAgent.connected=true;
+    await initialize();
+    if(!usingBackend)throw new Error('Connected but could not load runs.');
+    await refreshProfiles();
+  } catch(e){localAgent.connected=false;localAgent.token='';connectScreen(e.message+' If the browser blocked access, check the local-network permission and HTTPS.');}
+}
+async function refreshProfiles(){
+  try{const r=await agentFetch('/agent/profiles');if(r.ok){const d=await r.json();localAgent.profiles=d.profiles||[];render();}}catch(e){console.warn('Could not load profiles',e);}
+}
+async function launchProfile() {
+  const id=document.getElementById('agentProfile')?.value;
+  const msg=document.getElementById('captureMessage');
+  if(!id){if(msg)msg.textContent='Configure a profile on the local Agent first.';return;}
+  if(localAgent.busy)return;
+  localAgent.busy=true;
+  try{
+    const r=await agentFetch('/agent/captures',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile_id:id})});
+    const payload=await r.json();
+    if(!r.ok)throw new Error(payload.error||`HTTP ${r.status}`);
+    if(msg)msg.textContent='Capture started. Monitoring local Python process…';
+    const jobId=payload.job_id;
+    for(let tries=0;tries<600;tries++){
+      await new Promise(resolve=>setTimeout(resolve,1000));
+      const s=await agentFetch('/agent/captures/'+encodeURIComponent(jobId));
+      const state=await s.json();
+      if(!s.ok)throw new Error(state.error||'Job status unavailable');
+      if(state.status!=='running'){
+        if(msg)msg.textContent=state.status==='completed'?'Measurement complete. Refreshing Runs…':`Capture ${state.status}. Check the local Agent terminal and runs directory.`;
+        if(state.status==='completed'){
+          const x=await agentFetch('/api/runs');const data=await x.json();availableRuns=data.runs||[];
+          if(state.run_id&&availableRuns.some(q=>q.run_id===state.run_id))await changeRun(state.run_id);
+          else await refreshRunCatalog();
+        }
+        return;
+      }
+    }
+    if(msg)msg.textContent='Capture is still running. Check the local Agent terminal.';
+  }catch(e){if(msg)msg.textContent='Capture error: '+e.message;}finally{localAgent.busy=false;}
+}
+
+"use strict";
+let funcs=[],reportImages={},fullReports={};
+let availableRuns=[],activeRunId=null,usingBackend=false,realTrace=null;
+const timelineView={start:0,span:10};
+const state={tab:"home",index:0,event:0,finding:0};
+const expandedGroups=new Set(["Precise Functions","Offline Helpers","Other Campaign"]);
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+function num(v){if(v==null)return"N/A";const n=Number(v);return Number.isFinite(n)?(Math.abs(n)<1?n.toFixed(5):n.toFixed(3)):"N/A"}
+const ms=v=>v==null?"N/A":num(v)+" ms";
+const currentFunc=()=>funcs[state.index]||funcs[0];
+function groupName(f){const s=f.source||"";if(s.includes("lapa_precise_functions_"))return"Precise Functions";if(s.includes("lapa_offline_helpers_"))return"Offline Helpers";return"Other Campaign"}
+function functionLocation(f){return(f.full_name||f.id||"").split("::").pop()}
+function displayName(f){const s=f.source||"";const aliases={action_decoder_forward:"ActionDecoder.forward",visual_latent_policy_forward:"VisualLatentPolicy.forward",visual_latent_policy_listcomp:"VisualLatentPolicy.<listcomp>",build_context_listcomp:"build_context_tensor.<listcomp>",predict_action_listcomp:"predict_action.<listcomp>",transform_lambda:"transform.<lambda>"};for(const [key,name]of Object.entries(aliases))if(s.includes("/"+key+"_"))return name;return f.name||"Unknown"}
+const fullLabel=f=>displayName(f)+" · "+functionLocation(f);
+function mockEvents(i){return Array.from({length:3},(_,j)=>({start:9+(i*13+j*29)%70,width:5+(i+j*3)%13}))}
+function panel(title,content,right=""){return `<section class="panel"><div class="panel-header"><span>${title}</span>${right}</div>${content}</section>`}
+function metric(title,value,note){return `<div class="panel metric"><div class="metric-label">${title}</div><div class="metric-value">${value}</div><div class="metric-note">${note}</div></div>`}
+function kv(label,value){return `<div class="kv"><span>${label}</span><span>${value}</span></div>`}
+function pageHeader(title,description,right=""){return `<div class="page-header"><div><div class="eyebrow">PWCET TOOL / ${esc(state.tab.toUpperCase())}</div><h1>${title}</h1><p class="subtitle">${description}</p></div>${right}</div>`}
+function nav(tab){state.tab=tab;render();window.scrollTo(0,0)}
+function selectFunction(i){const n=Number(i);if(!Number.isInteger(n)||!funcs[n])return;state.index=n;state.event=0;render()}
+function selectTimelineEvent(i,j){if(!funcs[i])return;state.index=i;state.event=j;render()}
+function toggleTimelineGroup(group){expandedGroups.has(group)?expandedGroups.delete(group):expandedGroups.add(group);render()}
+function openAnalysis(i){state.index=Number(i);nav("analysis")}
+function openTimeline(i){state.index=Number(i);state.event=0;nav("timeline")}
+function home(){return `<div class="home">
+  <header class="home-header">
+    <div class="home-mark"><span class="home-mark-symbol">⌁</span> pWCET Tool</div>
+    <nav class="home-menu" aria-label="Main navigation">
+      <button onclick="document.getElementById('home-about').scrollIntoView({behavior:'smooth'})">About</button>
+      <button onclick="document.getElementById('home-features').scrollIntoView({behavior:'smooth'})">Features</button>
+      <button onclick="nav('system')">System Info</button>
+      <button class="home-menu-primary" onclick="nav('timeline')">Launch Demo ↗</button>
+    </nav>
+  </header>
+  <main class="home-main">
+    <section class="home-hero" aria-label="pWCET Tool introduction">
+      <div>
+        <div class="home-overline">FUNCTION-LEVEL TIMING ANALYSIS</div>
+        <h1>Understand timing.<br><em>Explore uncertainty.</em></h1>
+        <p class="home-hero-copy">pWCET Tool brings execution-time summaries, probabilistic worst-case execution-time (pWCET) analysis, and statistical review into a single, navigable research-tool prototype.</p>
+        <div class="home-actions">
+          <button class="home-primary" onclick="nav('timeline')">Explore Interactive Demo →</button>
+          <button class="home-secondary" onclick="nav('analysis')">View pWCET Analysis</button>
+        </div>
+        <div class="home-demo-caption"><span class="home-demo-dot"></span> LAPA dataset · Function summaries and original analysis reports</div>
+      </div>
+      <div class="home-preview" aria-label="Schematic interface preview, not recorded trace data">
+        <div class="home-preview-head"><i></i><i></i><i></i><span>pWCET Tool / Timeline</span></div>
+        <div class="home-preview-body">
+          <div class="home-preview-tree"><b>FUNCTIONS</b><div>▾ LAPA</div><div class="chosen">&nbsp; predict_action</div><div>&nbsp; forward</div><div>&nbsp; build_context</div><div>&nbsp; helpers</div></div>
+          <div class="home-preview-timeline">
+            <div class="home-preview-axis"><span>0</span><span>2s</span><span>4s</span><span>6s</span><span>8s</span></div>
+            <div class="home-preview-lane"><span class="home-preview-bar blue" style="left:8%;width:34%"></span><span class="home-preview-bar blue" style="left:54%;width:16%"></span></div>
+            <div class="home-preview-lane"><span class="home-preview-bar" style="left:18%;width:20%"></span><span class="home-preview-bar" style="left:57%;width:28%"></span></div>
+            <div class="home-preview-lane"><span class="home-preview-bar gold" style="left:29%;width:17%"></span><span class="home-preview-bar gold" style="left:70%;width:16%"></span></div>
+            <div class="home-preview-lane"><span class="home-preview-bar" style="left:9%;width:16%"></span><span class="home-preview-bar blue" style="left:46%;width:40%"></span></div>
+          </div>
+        </div>
+        <div class="home-preview-foot"><span>● Function exploration</span><span>● Timing statistics</span><span>Illustrative UI</span></div>
+      </div>
+    </section>
+
+    <section class="home-overview" id="home-about">
+      <div class="home-about">
+        <div class="home-section-kicker">WHY PWCET TOOL</div>
+        <h2>From profiler output to interpretable results.</h2>
+        <p>Instead of jumping between separate files and reports, explore function timing, GEV fitting summaries, pWCET estimates, and analysis flags in a unified workspace. This demonstration uses recorded LAPA function-level statistics; its timeline is intentionally simulated.</p>
+      </div>
+      <div class="home-status">
+        <div class="home-status-header"><strong>Demo snapshot</strong><span class="home-chip">LAPA PROTOTYPE</span></div>
+        <div class="home-statline"><b>${funcs.length||'—'}</b><span>functions loaded</span></div>
+        <p>Original statistics and report images are displayed when available. CPU, GPU and memory telemetry have not been imported.</p>
+      </div>
+    </section>
+
+    <section id="home-features">
+      <div class="home-features-head"><div><div class="home-section-kicker">EXPLORE THE WORKSPACE</div><h2>Four views. One analysis workflow.</h2></div><p>Choose a view to start exploring the LAPA demo.</p></div>
+      <div class="home-features">
+        <article class="home-feature"><div class="home-feature-icon">⌁</div><h3>Function Timeline</h3><p>Browse function summaries with a clearly labeled illustrative execution timeline.</p><button onclick="nav('timeline')">Explore timeline →</button></article>
+        <article class="home-feature"><div class="home-feature-icon">▥</div><h3>pWCET Analysis</h3><p>Inspect raw and block-maxima statistics, GEV parameters, pWCET estimates, and original report figures.</p><button onclick="nav('analysis')">Explore analysis →</button></article>
+        <article class="home-feature"><div class="home-feature-icon">◇</div><h3>Diagnosis</h3><p>Review reported IID and KS indicators with links to each function's supporting evidence.</p><button onclick="nav('diagnosis')">Explore diagnosis →</button></article>
+        <article class="home-feature"><div class="home-feature-icon">▤</div><h3>System Info</h3><p>Understand dataset coverage, campaign provenance, and currently unavailable telemetry.</p><button onclick="nav('system')">Explore metadata →</button></article>
+      </div>
+    </section>
+    <p class="home-disclaimer">Research prototype · The LAPA functions were measured across separate campaigns. Timeline events in this demo are illustrative and should not be interpreted as synchronized execution traces.</p>
+  </main>
+  <footer class="home-footer">pWCET Tool · Timing Analysis · LAPA Web GUI Prototype</footer>
+</div>`}
+function capturePanel(){
+  if(!usingBackend)return "";
+  const options=localAgent.profiles.map(p=>`<option value="${esc(p.id)}">${esc(p.label)} · ${esc(p.application)}</option>`).join('');
+  return `<section class="capture-panel">
+    <h2>Local Measurement <span class="tag">EXPLICIT PROFILE · LOCAL AGENT</span></h2>
+    <p class="hint">Only profiles explicitly configured on this computer can be launched. The website cannot send arbitrary shell commands.</p>
+    <div class="capture-controls">
+      <select class="select" id="agentProfile" aria-label="Local capture profile">${options||'<option value="">No configured profiles</option>'}</select>
+      <button class="btn" onclick="launchProfile()" ${options?'':'disabled'}>Start Measurement</button>
+      <button class="btn secondary" onclick="refreshRunCatalog()">Refresh Runs</button>
+      <button class="btn secondary" onclick="refreshProfiles()">Reload Profiles</button>
+    </div>
+    <p class="capture-message" id="captureMessage">CLI runs and newly captured measurements appear in the Run Selector. GEV / IESTA are unavailable for new captures.</p>
+  </section>`;
+}
+async function refreshRunCatalog(){
+  const node=$("captureMessage");
+  try{
+    const res=await agentFetch("/api/runs",{cache:"no-store"});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const data=await res.json();
+    availableRuns=data.runs||[];
+    if(node)node.textContent=`Loaded ${availableRuns.length} available run views. Use the Run Selector above to open a new run.`;
+    render();
+  }catch(e){if(node)node.textContent="Could not refresh runs: "+e.message;}
+}
+function timelineTotal(){return Math.max(0.001,Number(realTrace?.duration_ms)||10)}
+function timelineReset(){timelineView.start=0;timelineView.span=timelineTotal();state.event=0;render()}
+function timelineZoom(factor){
+  if(!realTrace?.available)return;
+  const total=timelineTotal(),old=timelineView.span;
+  const span=Math.max(Math.min(total,0.01),Math.min(total,old*factor));
+  const middle=timelineView.start+old/2;
+  timelineView.span=span;
+  timelineView.start=Math.max(0,Math.min(total-span,middle-span/2));render();
+}
+function timelinePan(direction){
+  const total=timelineTotal(),span=timelineView.span;
+  timelineView.start=Math.max(0,Math.min(total-span,timelineView.start+direction*span*.3));render();
+}
+/* v0.5: mouse-controlled timeline. Uses the same viewport as the toolbar. */
+const timelinePointer={active:false,moved:false,lastX:0,width:1,accumulated:0,lastDragEnd:-Infinity};
+function timelineClamp(start,span){
+  const total=timelineTotal();
+  const nextSpan=Math.max(Math.min(total,0.01),Math.min(total,span));
+  return {start:Math.max(0,Math.min(total-nextSpan,start)),span:nextSpan};
+}
+function timelineZoomAt(factor,fraction){
+  if(!realTrace?.available)return;
+  const before=timelineView.span;
+  const anchor=Math.max(0,Math.min(1,fraction));
+  const anchorTime=timelineView.start+anchor*before;
+  const next=timelineClamp(anchorTime-anchor*before*factor,before*factor);
+  timelineView.start=next.start;
+  timelineView.span=next.span;
+  render();
+}
+function timelineAreaFraction(clientX){
+  const track=document.querySelector('.tl-track');
+  if(!track)return 0.5;
+  const r=track.getBoundingClientRect();
+  if(!r.width)return 0.5;
+  return Math.max(0,Math.min(1,(clientX-r.left)/r.width));
+}
+function timelineWheel(event){
+  if(!realTrace?.available)return;
+  if(!event.target.closest('.tl-track, .tl-ruler'))return;
+  event.preventDefault();
+  if(event.shiftKey){
+    const next=timelineClamp(timelineView.start+Math.sign(event.deltaY||event.deltaX)*timelineView.span*.12,timelineView.span);
+    timelineView.start=next.start;render();
+    return;
+  }
+  const dy=event.deltaY!==0?event.deltaY:event.deltaX;
+  const factor=Math.exp(Math.max(-120,Math.min(120,dy))*.003);
+  timelineZoomAt(factor,timelineAreaFraction(event.clientX));
+}
+function timelinePointerDown(event){
+  if(!realTrace?.available||event.button!==0)return;
+  if(!event.target.closest('.tl-track, .tl-ruler'))return;
+  timelinePointer.active=true;
+  timelinePointer.moved=false;
+  timelinePointer.accumulated=0;
+  timelinePointer.lastX=event.clientX;
+  timelinePointer.width=document.querySelector('.tl-track')?.getBoundingClientRect().width||1;
+  document.querySelector('.tl-board')?.classList.add('mouse-panning');
+}
+function timelinePointerMove(event){
+  if(!timelinePointer.active)return;
+  const dx=event.clientX-timelinePointer.lastX;
+  timelinePointer.lastX=event.clientX;
+  timelinePointer.accumulated+=dx;
+  if(Math.abs(timelinePointer.accumulated)>4)timelinePointer.moved=true;
+  if(!timelinePointer.moved)return;
+  const next=timelineClamp(timelineView.start-dx/timelinePointer.width*timelineView.span,timelineView.span);
+  timelineView.start=next.start;
+  render();
+}
+function timelinePointerUp(){
+  if(!timelinePointer.active)return;
+  if(timelinePointer.moved)timelinePointer.lastDragEnd=performance.now();
+  timelinePointer.active=false;
+  document.querySelector('.tl-board')?.classList.remove('mouse-panning');
+}
+function installTimelineMouseHandlers(){
+  const board=document.querySelector('.tl-board');
+  if(!board||!realTrace?.available)return;
+  board.addEventListener('wheel',timelineWheel,{passive:false});
+  board.addEventListener('pointerdown',timelinePointerDown);
+  if(!window.__pwcetTimelineMouseInstalled){
+    window.addEventListener('pointermove',timelinePointerMove);
+    window.addEventListener('pointerup',timelinePointerUp);
+    window.addEventListener('pointercancel',timelinePointerUp);
+    window.addEventListener('blur',timelinePointerUp);
+    window.addEventListener('click',event=>{
+      if(performance.now()-timelinePointer.lastDragEnd<400&&event.target.closest('.tl-event')){
+        event.stopImmediatePropagation();event.preventDefault();
+      }
+    },true);
+    window.__pwcetTimelineMouseInstalled=true;
+  }
+}
+function selectedEvents(i){
+  return (realTrace?.events||[]).filter(e=>e.function_id===funcs[i]?.id);
+}
+function timeline(){
+  const f=currentFunc(),groups=["Precise Functions","Offline Helpers","Other Campaign"];
+  const real=Boolean(realTrace?.available),total=timelineTotal();
+  if(real && timelineView.span>total){timelineView.span=total;timelineView.start=0}
+  const viewStart=timelineView.start,span=timelineView.span,viewEnd=viewStart+span;
+  const intervals=real?selectedEvents(state.index):[];
+  const chosen=real?intervals[state.event]:mockEvents(state.index)[state.event]||mockEvents(state.index)[0];
+  const ruler=Array.from({length:6},(_,i)=>`<span>${(viewStart+span*i/5).toFixed(span<1?3:2)} ms</span>`).join("");
+  const rows=groups.map(group=>{
+    const entries=funcs.map((item,index)=>({item,index})).filter(e=>groupName(e.item)===group);
+    if(!entries.length)return"";
+    const expanded=expandedGroups.has(group);
+    const header=`<div class="tl-group-row"><button class="tl-group-button" onclick="toggleTimelineGroup('${group}')">${expanded?"▾":"▸"} ${esc(group)} <span style="color:#94a3b8">(${entries.length})</span></button><div class="tl-group-description">${expanded?(real?"Recorded function intervals":"Function summaries · simulated events"):"Group collapsed"}</div></div>`;
+    if(!expanded)return header;
+    return header+entries.map(({item,index})=>{
+      const raw=real?selectedEvents(index):mockEvents(index);
+      const blocks=raw.map((ev,j)=>{
+        const a=real?ev.start_ms:ev.start/100*10000;
+        const b=real?ev.end_ms:(ev.start+ev.width)/100*10000;
+        const lo=Math.max(a,viewStart),hi=Math.min(b,viewEnd);
+        if(hi<=lo)return "";
+        return `<button class="tl-event ${index===state.index&&j===state.event?"active":""}" style="left:${((lo-viewStart)/span*100).toFixed(5)}%;width:${Math.max(0.08,(hi-lo)/span*100).toFixed(5)}%" onclick="selectTimelineEvent(${index},${j})" title="${real?`Sample ${esc(ev.sample_id)} · ${esc(ev.duration_ms)} ms · PID ${esc(ev.pid)} / TID ${esc(ev.tid)}`:`Simulated event ${j+1}`}"></button>`;
+      }).join("");
+      return `<div class="tl-function-row"><button class="tl-function-name ${index===state.index?"active":""}" onclick="selectFunction(${index})" title="${esc(fullLabel(item))}"><span class="tl-name-primary">${esc(displayName(item))}</span><span class="tl-name-secondary">${esc(functionLocation(item))}</span></button><div class="tl-track ${index===state.index?"selected":""}">${blocks}</div></div>`;
+    }).join("");
+  }).join("");
+  const controls=real?`<div class="tl-tools"><button class="btn secondary" onclick="timelinePan(-1)" title="Pan left">←</button><button class="btn secondary" onclick="timelineZoom(.5)" title="Zoom in">＋</button><button class="btn secondary" onclick="timelineZoom(2)" title="Zoom out">−</button><button class="btn secondary" onclick="timelinePan(1)" title="Pan right">→</button><button class="btn secondary" onclick="timelineReset()">Reset to Fit</button><span class="hint">${viewStart.toFixed(3)}–${viewEnd.toFixed(3)} ms</span></div>`:"";
+  const eventDetails=real?chosen?`${kv("Sample ID",esc(chosen.sample_id))}${kv("Start",num(chosen.start_ms)+" ms")}${kv("Duration",num(chosen.duration_ms)+" ms")}${kv("Thread CPU",ms(chosen.thread_cpu_ms))}${kv("PID / TID",esc(chosen.pid)+" / "+esc(chosen.tid))}${kv("Clock","Relative monotonic")}`:'<p class="hint">No event selected for this function.</p>':`<span class="tag">SIMULATED DATA</span>${kv("Event","#"+(state.event+1))}${kv("Start",(chosen.start*100).toFixed(0)+" ms")}${kv("Duration",(chosen.width*100).toFixed(0)+" ms")}`;
+  return `${pageHeader("Timeline / Function View",real?"Recorded function intervals from the selected Python profiling run.":"Function summaries with an illustrative timeline (not recorded timestamps).")}${capturePanel()}
+  ${controls}
+  ${real?'<p class="tl-gesture-tip">Mouse: scroll over the timeline to zoom at the cursor · drag left/right to pan · Shift + scroll to pan · Reset to Fit restores the full run.</p>':''}
+  <div class="tl-board"><div class="tl-scroll"><div class="tl-inner"><div class="tl-board-header"><div class="tl-tree-heading">FUNCTION TREE</div><div class="tl-chart-heading"><span>EXECUTION TIMELINE</span><span class="tag">${real?"RECORDED · WALL TIME":"SIMULATED · 10s"}</span></div></div><div class="tl-ruler-row"><div class="tl-ruler-label">Grouped by available source</div><div class="tl-ruler">${real?ruler:'<span>0s</span><span>2s</span><span>4s</span><span>6s</span><span>8s</span><span>10s</span>'}</div></div>${rows}<div class="tl-resource-title">RESOURCE MONITORING</div>${["CPU","GPU","Memory"].map(r=>`<div class="tl-resource-row"><div class="tl-resource-label"><span class="tl-resource-indicator"></span>${r}</div><div class="tl-no-data">No telemetry data available</div></div>`).join("")}</div></div></div>
+  <div class="tl-details">${panel("SELECTED FUNCTION",`<div class="panel-body"><div style="font-weight:750;color:var(--blue);margin-bottom:8px">${esc(displayName(f))}</div><p class="hint">${esc(functionLocation(f))}</p>${kv("Samples",Number(f.samples||0).toLocaleString())}${kv("Mean",ms(f.mean_ms))}${kv("Observed Max",ms(f.max_ms))}${kv("Raw PPF 99.6%",ms(f.raw_ppf_99_6_ms))}${kv("IESTA PPF 99.6%",ms(f.iesta_ppf_99_6_ms))}<button class="btn" style="margin-top:16px" onclick="openAnalysis(${state.index})">Open pWCET Analysis →</button></div>`)}${panel(real?"SELECTED RECORDED EVENT":"SELECTED SIMULATED EVENT",`<div class="panel-body">${eventDetails}</div>`)}</div>
+  <div class="warning"><strong>Data scope:</strong> ${real?"Events are actual completed Python function intervals from this run. Times are relative to the earliest recorded start; they are not synchronized with external devices. CPU/GPU/memory utilization traces have not been imported.":"Legacy LAPA summaries do not include synchronized event timestamps. Event positions here are simulated."}</div>`;
+}
+
+function reportValue(v,digits=5){if(v==null)return"N/A";const n=Number(v);return Number.isFinite(n)?n.toFixed(digits):"N/A"}
+function reportFlag(v){return v===true?"True":v===false?"False":"N/A"}
+function reportTable(title,headers,values){return `<section><div class="report-section-title">${title}</div><div class="report-table-scroll"><table class="report-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody><tr>${values.map(v=>`<td>${esc(v==null?"N/A":v)}</td>`).join("")}</tr></tbody></table></div></section>`}
+function reportChartPanel(f){const images=reportImages[f.id]||{},charts=[["gev_pdf","GEV PDF"],["cdf","EXECUTION TIME CDF"],["pdf","EXECUTION TIME PDF"],["cv","COEFFICIENT OF VARIATION"]];return `<section class="figure-section"><h2 class="section-title">Original pWCET Report Figures</h2><p class="subtitle">Original analysis figures, if present for the selected function.</p><div class="figure-grid">${charts.map(([key,title])=>{const src=images[key];return panel(title,`<div class="panel-body">${src?`<div class="figure-panel"><img src="${esc(src)}" alt="${esc(title)}" loading="lazy"></div><a class="figure-link" href="${esc(src)}" target="_blank" rel="noopener noreferrer">Open full-size figure ↗</a>`:`<div class="figure-empty">Original figure not available.</div>`}</div>`,"<span class='tag'>ORIGINAL REPORT</span>")}).join("")}</div></section>`}
+function analysis(){const f=currentFunc(),r=fullReports[f.id]||{};const select=`<select class="select" onchange="selectFunction(this.value)">${funcs.map((item,index)=>`<option value="${index}" ${index===state.index?"selected":""}>${esc(fullLabel(item))}</option>`).join("")}</select>`;const rawStats=reportTable("Statistics (raw data)",["#measurements","min (ms)","avg (ms)","max (ms)","stdev","CV"],[r.num_execution_time_measurements??f.samples,reportValue(r.measurements_min_ms),reportValue(r.measurements_avg_ms??f.mean_ms),reportValue(r.measurements_max_ms??f.max_ms),reportValue(r.measurements_stdev),reportValue(r.measurements_cv)]);const blocks=reportTable("Statistics (block maxima)",["#blocks","min (ms)","avg (ms)","max (ms)","stdev","CV"],[r.num_blocks??f.block_maxima_count,reportValue(r.block_maxima_min_ms),reportValue(r.block_maxima_avg_ms),reportValue(r.block_maxima_max_ms),reportValue(r.block_maxima_stdev),reportValue(r.block_maxima_cv)]);const rawGEV=reportTable(`GEV (raw data), IID: ${reportFlag(r.raw_is_iid??f.raw_is_iid)}`,["shape","location","scale"],[reportValue(r.raw_gev_shape,9),reportValue(r.raw_gev_loc,9),reportValue(r.raw_gev_scale,9)]);const ppfNames=["PPF 95%","PPF 99%","PPF 99.6%","PPF 99.9%","PPF 99.99%","PPF 99.999%"];const rawP=reportTable("pWCET (raw data)",ppfNames,[r.raw_ppf_95,r.raw_ppf_99,r.raw_ppf_99_6??f.raw_ppf_99_6_ms,r.raw_ppf_99_9,r.raw_ppf_99_99,r.raw_ppf_99_999].map(x=>reportValue(x)));const iGEV=reportTable(`GEV (IESTA), IID: ${reportFlag(r.iesta_is_iid??f.iesta_is_iid)}`,["shape","location","scale"],[reportValue(r.iesta_gev_shape,9),reportValue(r.iesta_gev_loc,9),reportValue(r.iesta_gev_scale,9)]);const iP=reportTable("pWCET (IESTA)",ppfNames,[r.iesta_ppf_95,r.iesta_ppf_99,r.iesta_ppf_99_6??f.iesta_ppf_99_6_ms,r.iesta_ppf_99_9,r.iesta_ppf_99_99,r.iesta_ppf_99_999].map(x=>reportValue(x)));const ks=r.kstest_pvalue??f.ks_pvalue;const scaleIssue=["letterbox","compose_vertical_letterbox"].includes(f.name);return `${pageHeader("pWCET Analysis","Statistical analysis results from the original LAPA reports.",select)}<div class="report-document"><div class="report-function-name">${esc(f.full_name||f.id)}</div>${rawStats}${blocks}${rawGEV}${rawP}<div class="report-test"><strong>Kolmogorov–Smirnov Test</strong><span style="margin-left:18px">p-value = ${reportValue(ks,6)}</span><p>GEV goodness-of-fit diagnostic. Review the original report's assumptions and methodology.</p></div>${iGEV}${iP}${scaleIssue?`<div class="warning"><strong>Known IESTA scale issue:</strong> This function has a previously identified relative/absolute timing scale inconsistency. Its IESTA PPF requires review.</div>`:""}</div>${reportChartPanel(f)}<div class="warning">Values come from the original LAPA reports where available. Missing fields are shown as N/A. Statistical validity must be reviewed per function; functions originate from separate campaigns.</div>`}
+function makeFindings(){const findings=[];funcs.forEach((f,index)=>{if(f.ks_pvalue!=null&&f.ks_pvalue<0.05)findings.push({level:"yellow",category:"Statistical Review",title:"Low reported KS p-value",detail:"Reported KS p-value: "+num(f.ks_pvalue)+". Review model fit and assumptions.",index});if(f.raw_is_iid===false)findings.push({level:"yellow",category:"IID Assessment",title:"Raw IID flagged false",detail:"The report recorded raw_is_iid=false. Further review is recommended.",index});if(["letterbox","compose_vertical_letterbox"].includes(f.name))findings.push({level:"yellow",category:"Output Interpretation",title:"IESTA scale inconsistency",detail:"Possible relative/absolute timing-scale interpretation issue.",index})});["CPU / Compute","Memory","I/O / Blocking"].forEach(category=>findings.push({level:"gray",category,title:"Evidence unavailable",detail:"Resource-level evidence unavailable in the current LAPA dataset.",index:0}));return findings}
+function diagnosis(){const findings=makeFindings(),active=findings[state.finding]||findings[0],review=findings.filter(f=>f.level==="yellow").length,na=findings.filter(f=>f.level==="gray").length;const rows=findings.map((item,i)=>`<tr><td><span class="status-dot ${item.level}"></span>${item.level==="yellow"?"Review":"N/A"}</td><td>${esc(item.category)}</td><td>${esc(item.title)}</td><td>${esc(displayName(funcs[item.index]))}</td><td><button class="link" onclick="state.finding=${i};render()">Inspect →</button></td></tr>`).join("");return `${pageHeader("Diagnosis Results","Evidence-based statistical review indicators.")}<div class="metrics">${metric("Review Items",review,"Statistical review")}${metric("N/A Categories",na,"Missing evidence")}${metric("Functions",funcs.length,"LAPA targets")}${metric("Rule Status","DEMO","Thresholds not finalized")}</div>${panel("DIAGNOSTIC FINDINGS",`<div class="table-wrap"><table class="data-table"><thead><tr><th>Status</th><th>Category</th><th>Finding</th><th>Function</th><th>Evidence</th></tr></thead><tbody>${rows}</tbody></table></div>`)}<div class="diagnosis-detail"><h3>${esc(active.title)}</h3><p>${esc(active.detail)}</p><p><strong>Function:</strong> ${esc(fullLabel(funcs[active.index]))}</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="openAnalysis(${active.index})">View pWCET Evidence →</button><button class="btn secondary" onclick="openTimeline(${active.index})">View Timeline →</button></div></div><div class="warning">These are statistical review prompts, not confirmed root causes. N/A means evidence is unavailable.</div>`}
+function infoPanel(title,rows){return panel(title,`<div class="panel-body">${rows.map(([k,v])=>`<div class="info-row"><span>${esc(k)}</span><span>${esc(v)}</span></div>`).join("")}</div>`)}
+function system(){const groups=[...new Set(funcs.map(groupName))],total=funcs.reduce((a,f)=>a+Number(f.samples||0),0);return `${pageHeader("System Information","Selected measurement dataset and analysis metadata.")}<div class="info-grid">${infoPanel("DATASET",[["Application",availableRuns.find(r=>r.run_id===activeRunId)?.application||"LAPA sample"],["Language","Python"],["Functions",String(funcs.length)],["Reported Samples",total.toLocaleString()],["Source","Original profiler reports"],["Campaign Scope","Merged across runs"]])}${infoPanel("ANALYSIS METADATA",[["Block Maxima","Per-function values"],["pWCET","Raw / IESTA PPF"],["Fit Diagnostic","KS p-value"],["IID Indicator","Raw / IESTA"],["Observed P99","Not included"],["Timeline","Simulated"]])}${infoPanel("CAMPAIGN GROUPS",groups.map(g=>[g,funcs.filter(f=>groupName(f)===g).length+" functions"]))}${infoPanel("PLATFORM",[["Operating System","Not included"],["CPU","Not included"],["GPU","Not included"],["Profiler Config","Not included"],["Raw Traces","Not imported"],["Original Figures","Imported when available"]])}</div>`}
+function appShell(){const tabs=[["home","Home","⌂"],["timeline","Timeline / Function","⌁"],["analysis","pWCET Analysis","▥"],["diagnosis","Diagnosis","◇"],["system","System Info","▤"]],current=tabs.find(t=>t[0]===state.tab);const pages={timeline,analysis,diagnosis,system};return `<div class="shell"><aside class="sidebar"><div class="brand"><div class="brand-icon">⌁</div><div><div class="brand-name">pWCET Tool</div><div class="brand-subtitle">TIMING ANALYSIS</div></div></div><div><div class="nav-title">WORKSPACE</div><div class="nav">${tabs.map(([id,label,symbol])=>`<button class="${state.tab===id?"active":""}" onclick="nav('${id}')"><span class="nav-symbol">${symbol}</span>${label}</button>`).join("")}</div></div><div class="sidebar-status"><strong>DATASET ${funcs.length?"LOADED":"UNAVAILABLE"}</strong><p>Reported statistics · Original figures · Simulated timeline</p></div></aside><div class="main"><header class="topbar"><span>Workspace / <strong>${current[1]}</strong></span><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">${usingBackend?`<select class="select" style="min-width:190px;max-width:360px;padding:7px" aria-label="Select analysis run" onchange="changeRun(this.value)">${availableRuns.map(r=>`<option value="${esc(r.run_id)}" ${r.run_id===activeRunId?"selected":""}>${esc(r.label)} (${r.function_count})</option>`).join("")}</select>`:""}<span class="top-badge">● ${funcs.length} FUNCTIONS${usingBackend?" · API":" · STATIC"}</span></div></header><main class="content">${pages[state.tab]()}<div class="footer">pWCET Tool · Research prototype · Recorded function intervals for compatible CLI runs · Legacy summaries use simulated events</div></main></div></div>`}
+function render(){if(state.tab==="home"){$("app").innerHTML=home();return}if(!funcs.length){$("app").innerHTML=`<div class="error"><h2>LAPA data unavailable</h2><p>The interactive demo requires lapa_demo.json in the same folder as demo.html.</p><button class="btn" onclick="nav('home')">Back to Home</button></div>`;return}$("app").innerHTML=appShell();if(state.tab==="timeline")installTimelineMouseHandlers()}
+async function loadOptionalJSON(filename){try{const res=await fetch(filename,{cache:"no-store"});if(!res.ok){console.warn(filename+" unavailable (HTTP "+res.status+")");return{}}return await res.json()}catch(e){console.warn("Could not load "+filename,e);return{}}}
+async function changeRun(runId){
+  if(!usingBackend)return;
+  const chosen=availableRuns.find(r=>r.run_id===runId);
+  if(!chosen)return;
+  try{
+    const response=await agentFetch(`/api/runs/${encodeURIComponent(runId)}`,{cache:"no-store"});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    funcs=Array.isArray(data.functions)?data.functions:[];
+    fullReports=data.full_reports||{};
+    reportImages=data.images||{};
+    activeRunId=runId;
+    realTrace=null;
+    try {
+      const er=await agentFetch(`/api/runs/${encodeURIComponent(runId)}/events`,{cache:"no-store"});
+      if(er.ok){const payload=await er.json();if(payload.available)realTrace=payload;}
+    } catch(e) {console.warn("Recorded events unavailable",e)}
+    timelineView.start=0;timelineView.span=realTrace?.duration_ms||10;
+    state.index=0;state.event=0;state.finding=0;
+    render();
+  }catch(error){console.error("Could not switch run",error);alert("Could not load run: "+error.message)}
+}
+async function initialize(){
+  if(!localAgent.connected){connectScreen();return;}
+  // Prefer the live, same-origin Python API; keep static JSON as a fallback.
+  try{
+    const res=await agentFetch("/api/runs",{cache:"no-store"});
+    if(!res.ok)throw new Error("API unavailable");
+    const payload=await res.json();
+    availableRuns=Array.isArray(payload.runs)?payload.runs:[];
+    if(!availableRuns.length)throw new Error("No runs in backend");
+    usingBackend=true;
+    // Merged view is explicitly marked as a demo aggregation, not a synchronized run.
+    await changeRun((availableRuns.find(r=>r.run_id.startsWith("capture-"))||availableRuns[0]).run_id);
+    console.log("pWCET Tool API connected:",availableRuns.length,"views");
+    return;
+  }catch(error){
+    usingBackend=false;
+    console.info("pWCET Tool API not available, falling back to static JSON:",error.message);
+  }
+  try{
+    const data=await loadOptionalJSON("./lapa_demo.json");
+    funcs=Array.isArray(data.functions)?data.functions:[];
+    const [reports,images]=await Promise.all([
+      loadOptionalJSON("./lapa_full_report.json"),
+      loadOptionalJSON("./lapa_images.json")
+    ]);
+    fullReports=reports;
+    reportImages=images;
+    const idx=funcs.findIndex(f=>f.name==="predict_action");
+    state.index=idx>=0?idx:0;
+    console.log("pWCET Tool static fallback:",funcs.length,"functions");
+  }catch(error){console.error(error)}
+  render();
+}
+initialize();
+</script>
+</body>
+</html>
