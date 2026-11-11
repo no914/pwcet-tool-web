@@ -117,11 +117,20 @@ function agentFetch(path,options={}) {
   headers.set('X-pWCET-Token',localAgent.token);
   return fetch(localAgent.base+path,{...options,headers,cache:'no-store',mode:'cors'});
 }
+function openLocalConnect(){connectScreen();}
+async function returnToDemo(){
+  localAgent.connected=false;
+  localAgent.token='';
+  localAgent.profiles=[];
+  await loadDemo();
+  state.tab='home';
+  render();
+}
 function connectScreen(message='') {
   const node = document.getElementById('app');
   node.innerHTML = `<div style="min-height:100vh;background:#f6f9fd;padding:9vh 20px;color:#20344f;font:15px/1.6 system-ui,sans-serif">
     <div style="max-width:600px;margin:auto;background:white;border:1px solid #dce6f3;border-radius:18px;padding:32px;box-shadow:0 15px 50px #2345630b">
-      <h1 style="font-size:29px;margin:0 0 8px">pWCET Tool · Connect Local Agent</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1 style="font-size:29px;margin:0 0 8px">Connect Local Profiler</h1><button onclick="returnToDemo()" style="padding:8px 12px;background:#f1f5f9;border:1px solid #cbd8e8;border-radius:8px;cursor:pointer">← Back to Demo</button></div>
       <p>To profile applications on <strong>this computer</strong>, first start the pWCET Tool Local Agent. This public website does not execute Python itself.</p>
       <p style="font-size:13px;color:#60718b">Local Agent URL: <code>http://127.0.0.1:8765</code></p>
       <label for="agentToken">Pairing token (printed in the Agent terminal)</label>
@@ -215,7 +224,7 @@ function home(){return `<div class="home">
       <button onclick="document.getElementById('home-about').scrollIntoView({behavior:'smooth'})">About</button>
       <button onclick="document.getElementById('home-features').scrollIntoView({behavior:'smooth'})">Features</button>
       <button onclick="nav('system')">System Info</button>
-      <button class="home-menu-primary" onclick="nav('timeline')">Launch Demo ↗</button>
+      <button class="home-menu-primary" onclick="openLocalConnect()">Connect Local Profiler ↗</button>
     </nav>
   </header>
   <main class="home-main">
@@ -226,9 +235,9 @@ function home(){return `<div class="home">
         <p class="home-hero-copy">pWCET Tool brings execution-time summaries, probabilistic worst-case execution-time (pWCET) analysis, and statistical review into a single, navigable research-tool prototype.</p>
         <div class="home-actions">
           <button class="home-primary" onclick="nav('timeline')">Explore Interactive Demo →</button>
-          <button class="home-secondary" onclick="nav('analysis')">View pWCET Analysis</button>
+          <button class="home-secondary" onclick="openLocalConnect()">Connect Local Profiler</button>
         </div>
-        <div class="home-demo-caption"><span class="home-demo-dot"></span> LAPA dataset · Function summaries and original analysis reports</div>
+        <div class="home-demo-caption"><span class="home-demo-dot"></span> LAPA sample · function summaries; some analyses unavailable</div>
       </div>
       <div class="home-preview" aria-label="Schematic interface preview, not recorded trace data">
         <div class="home-preview-head"><i></i><i></i><i></i><span>pWCET Tool / Timeline</span></div>
@@ -442,8 +451,8 @@ function makeFindings(){const findings=[];funcs.forEach((f,index)=>{if(f.ks_pval
 function diagnosis(){const findings=makeFindings(),active=findings[state.finding]||findings[0],review=findings.filter(f=>f.level==="yellow").length,na=findings.filter(f=>f.level==="gray").length;const rows=findings.map((item,i)=>`<tr><td><span class="status-dot ${item.level}"></span>${item.level==="yellow"?"Review":"N/A"}</td><td>${esc(item.category)}</td><td>${esc(item.title)}</td><td>${esc(displayName(funcs[item.index]))}</td><td><button class="link" onclick="state.finding=${i};render()">Inspect →</button></td></tr>`).join("");return `${pageHeader("Diagnosis Results","Evidence-based statistical review indicators.")}<div class="metrics">${metric("Review Items",review,"Statistical review")}${metric("N/A Categories",na,"Missing evidence")}${metric("Functions",funcs.length,"LAPA targets")}${metric("Rule Status","DEMO","Thresholds not finalized")}</div>${panel("DIAGNOSTIC FINDINGS",`<div class="table-wrap"><table class="data-table"><thead><tr><th>Status</th><th>Category</th><th>Finding</th><th>Function</th><th>Evidence</th></tr></thead><tbody>${rows}</tbody></table></div>`)}<div class="diagnosis-detail"><h3>${esc(active.title)}</h3><p>${esc(active.detail)}</p><p><strong>Function:</strong> ${esc(fullLabel(funcs[active.index]))}</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="openAnalysis(${active.index})">View pWCET Evidence →</button><button class="btn secondary" onclick="openTimeline(${active.index})">View Timeline →</button></div></div><div class="warning">These are statistical review prompts, not confirmed root causes. N/A means evidence is unavailable.</div>`}
 function infoPanel(title,rows){return panel(title,`<div class="panel-body">${rows.map(([k,v])=>`<div class="info-row"><span>${esc(k)}</span><span>${esc(v)}</span></div>`).join("")}</div>`)}
 function system(){const groups=[...new Set(funcs.map(groupName))],total=funcs.reduce((a,f)=>a+Number(f.samples||0),0);return `${pageHeader("System Information","Selected measurement dataset and analysis metadata.")}<div class="info-grid">${infoPanel("DATASET",[["Application",availableRuns.find(r=>r.run_id===activeRunId)?.application||"LAPA sample"],["Language","Python"],["Functions",String(funcs.length)],["Reported Samples",total.toLocaleString()],["Source","Original profiler reports"],["Campaign Scope","Merged across runs"]])}${infoPanel("ANALYSIS METADATA",[["Block Maxima","Per-function values"],["pWCET","Raw / IESTA PPF"],["Fit Diagnostic","KS p-value"],["IID Indicator","Raw / IESTA"],["Observed P99","Not included"],["Timeline","Simulated"]])}${infoPanel("CAMPAIGN GROUPS",groups.map(g=>[g,funcs.filter(f=>groupName(f)===g).length+" functions"]))}${infoPanel("PLATFORM",[["Operating System","Not included"],["CPU","Not included"],["GPU","Not included"],["Profiler Config","Not included"],["Raw Traces","Not imported"],["Original Figures","Imported when available"]])}</div>`}
-function appShell(){const tabs=[["home","Home","⌂"],["timeline","Timeline / Function","⌁"],["analysis","pWCET Analysis","▥"],["diagnosis","Diagnosis","◇"],["system","System Info","▤"]],current=tabs.find(t=>t[0]===state.tab);const pages={timeline,analysis,diagnosis,system};return `<div class="shell"><aside class="sidebar"><div class="brand"><div class="brand-icon">⌁</div><div><div class="brand-name">pWCET Tool</div><div class="brand-subtitle">TIMING ANALYSIS</div></div></div><div><div class="nav-title">WORKSPACE</div><div class="nav">${tabs.map(([id,label,symbol])=>`<button class="${state.tab===id?"active":""}" onclick="nav('${id}')"><span class="nav-symbol">${symbol}</span>${label}</button>`).join("")}</div></div><div class="sidebar-status"><strong>DATASET ${funcs.length?"LOADED":"UNAVAILABLE"}</strong><p>Reported statistics · Original figures · Simulated timeline</p></div></aside><div class="main"><header class="topbar"><span>Workspace / <strong>${current[1]}</strong></span><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">${usingBackend?`<select class="select" style="min-width:190px;max-width:360px;padding:7px" aria-label="Select analysis run" onchange="changeRun(this.value)">${availableRuns.map(r=>`<option value="${esc(r.run_id)}" ${r.run_id===activeRunId?"selected":""}>${esc(r.label)} (${r.function_count})</option>`).join("")}</select>`:""}<span class="top-badge">● ${funcs.length} FUNCTIONS${usingBackend?" · API":" · STATIC"}</span></div></header><main class="content">${pages[state.tab]()}<div class="footer">pWCET Tool · Research prototype · Recorded function intervals for compatible CLI runs · Legacy summaries use simulated events</div></main></div></div>`}
-function render(){if(state.tab==="home"){$("app").innerHTML=home();return}if(!funcs.length){$("app").innerHTML=`<div class="error"><h2>LAPA data unavailable</h2><p>The interactive demo requires lapa_demo.json in the same folder as demo.html.</p><button class="btn" onclick="nav('home')">Back to Home</button></div>`;return}$("app").innerHTML=appShell();if(state.tab==="timeline")installTimelineMouseHandlers()}
+function appShell(){const tabs=[["home","Home","⌂"],["timeline","Timeline / Function","⌁"],["analysis","pWCET Analysis","▥"],["diagnosis","Diagnosis","◇"],["system","System Info","▤"]],current=tabs.find(t=>t[0]===state.tab);const pages={timeline,analysis,diagnosis,system};return `<div class="shell"><aside class="sidebar"><div class="brand"><div class="brand-icon">⌁</div><div><div class="brand-name">pWCET Tool</div><div class="brand-subtitle">TIMING ANALYSIS</div></div></div><div><div class="nav-title">WORKSPACE</div><div class="nav">${tabs.map(([id,label,symbol])=>`<button class="${state.tab===id?"active":""}" onclick="nav('${id}')"><span class="nav-symbol">${symbol}</span>${label}</button>`).join("")}</div></div><div class="sidebar-status"><strong>${usingBackend?'LOCAL PROFILER CONNECTED':'DEMO MODE · SAMPLE DATA'}</strong><p>${usingBackend?'Recorded function timing from this computer.':'LAPA summaries · illustrative timeline, not a synchronized trace.'}</p></div></aside><div class="main"><header class="topbar"><span>Workspace / <strong>${current[1]}</strong></span><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">${usingBackend?`<select class="select" style="min-width:190px;max-width:360px;padding:7px" aria-label="Select analysis run" onchange="changeRun(this.value)">${availableRuns.map(r=>`<option value="${esc(r.run_id)}" ${r.run_id===activeRunId?"selected":""}>${esc(r.label)} (${r.function_count})</option>`).join("")}</select>`:""}<span class="top-badge">● ${funcs.length} FUNCTIONS${usingBackend?" · LOCAL AGENT":" · DEMO"}</span><button class="btn secondary" style="padding:8px 11px" onclick="${usingBackend?'returnToDemo()':'openLocalConnect()'}">${usingBackend?'Disconnect · Demo':'Connect Local Profiler'}</button></div></header><main class="content">${pages[state.tab]()}<div class="footer">pWCET Tool · Research prototype · Recorded function intervals for compatible CLI runs · Legacy summaries use simulated events</div></main></div></div>`}
+function render(){if(state.tab==="home"){$("app").innerHTML=home();return}if(!funcs.length){$("app").innerHTML=`<div class="error"><h2>Demo data unavailable</h2><p>The public demo requires lapa_demo.json beside index.html.</p><button class="btn" onclick="nav('home')">Back to Home</button></div>`;return}$("app").innerHTML=appShell();if(state.tab==="timeline")installTimelineMouseHandlers()}
 async function loadOptionalJSON(filename){try{const res=await fetch(filename,{cache:"no-store"});if(!res.ok){console.warn(filename+" unavailable (HTTP "+res.status+")");return{}}return await res.json()}catch(e){console.warn("Could not load "+filename,e);return{}}}
 async function changeRun(runId){
   if(!usingBackend)return;
@@ -468,7 +477,7 @@ async function changeRun(runId){
   }catch(error){console.error("Could not switch run",error);alert("Could not load run: "+error.message)}
 }
 async function initialize(){
-  if(!localAgent.connected){connectScreen();return;}
+  if(!localAgent.connected){await loadDemo();render();return;}
   // Prefer the live, same-origin Python API; keep static JSON as a fallback.
   try{
     const res=await agentFetch("/api/runs",{cache:"no-store"});
@@ -485,6 +494,14 @@ async function initialize(){
     usingBackend=false;
     console.info("pWCET Tool API not available, falling back to static JSON:",error.message);
   }
+  await loadDemo();
+  render();
+}
+async function loadDemo(){
+  usingBackend=false;
+  realTrace=null;
+  availableRuns=[];
+  activeRunId=null;
   try{
     const data=await loadOptionalJSON("./lapa_demo.json");
     funcs=Array.isArray(data.functions)?data.functions:[];
@@ -496,9 +513,11 @@ async function initialize(){
     reportImages=images;
     const idx=funcs.findIndex(f=>f.name==="predict_action");
     state.index=idx>=0?idx:0;
-    console.log("pWCET Tool static fallback:",funcs.length,"functions");
+    state.event=0;
+    state.finding=0;
+    timelineView.start=0;timelineView.span=10;
+    console.log("pWCET Tool Demo Mode:",funcs.length,"functions");
   }catch(error){console.error(error)}
-  render();
 }
 initialize();
 </script>
